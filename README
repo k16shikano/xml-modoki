@@ -17,6 +17,9 @@ xml-modoki.scm
       applys <procedure> for each contents in <string> enclosed with <tag>.
 
  You can check xml-modoki-test.scm for more examples.
+
+ It seeks a xml-like coutnet using a recursive descent parsing, and my implementation 
+ of that is so naive. It might take a long time to finish your request.
  
 * Change Log
 [2009-04-17] First version
