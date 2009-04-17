@@ -1,4 +1,4 @@
-;; my-simple-xml.scm
+;; xml-modoki.scm
 ;; a simple parser for xml-like tagged texts
 
 (define-module xml-modoki
