@@ -6,6 +6,7 @@
   (export read-xml
 	  xml-maximal-region
 	  for-each-xmlregion
+	  attr-list
 	  )
   )
 (select-module xml-modoki)
@@ -194,22 +195,34 @@
               reverse
               string->list)
      str))
+  (define splitter?
+    (let ((inquote? #f))
+      (lambda (c)
+	(cond ((char=? c #\") 
+	       (set! inquote? (if inquote? #f #t))
+	       #f)
+	      (inquote?
+	       #f)
+	      ((char-set-contains? #[\s\x0d\x0a] c)
+	       #t)
+	      (else
+	       #f)))))
   (unless (start-xmltag? e)
           '()
-          (let ((ls (cdr (string-split (string-drop-until-right #[>?] e)
-                                       #[\s\x0d\x0a]))))
+          (let ((ls (cdr (string-split (string-drop-until-right #[>?/\spaces] e) 
+				       splitter?))))
             (map split-by-equal ls))))
 
-;; String -> xmlelement
-(define (get-xml str)
-  (with-input-from-string str
-    (lambda () (read-xml))))
-
-;; String -> xmlregion -> String
-(define (attr-value attr-name region)
-  (cond ((assoc attr-name (attr-list (get-xml region)))
-                           => (cut cdr <>))
-                          (else "")))
+(define (split-by proc ls)
+  (let ((n (list-index splitter? ls)))
+    (if n
+	(receive (h r) (split-at ls n)
+	  (if (null? (cdr r))
+	      (list h)
+	      (if (> n 1)
+		  (cons h (split-by proc (cdr r)))
+		  (split-by proc (cdr r)))))
+	(list ls))))
 
 (define (for-each-xmlregion str tag proc . ignorelist)
   (define (ig-elems)
@@ -223,5 +236,17 @@
          (string-append before (proc region)
                         (if (string-null? after) after
                             (for-each-xmlregion after tag proc (ig-elems))))))))
+
+;;;; quick-and-dirty functions. they haven't testd
+;; String -> xmlelement
+(define (get-xml str)
+  (with-input-from-string str
+    (lambda () (read-xml))))
+
+;; String -> xmlregion -> String
+(define (attr-value attr-name region)
+  (cond ((assoc attr-name (attr-list (get-xml region)))
+                           => (cut cdr <>))
+                          (else "")))
 
 (provide "xml-modoki")

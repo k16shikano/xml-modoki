@@ -53,3 +53,12 @@
      (lambda ()
        (xml-maximal-region 'code))) 1))
 (test* "case '(get-code-from-unclosed)'" "<code>if 0 < p < 2; then\n  bu-\n else if p > 5; then\n bo-\n fi</code>" (get-code-from-unclosed))
+
+
+;; Some utilities
+
+;; attr-list generates name and value pairs from a tag.
+(define tag-with-attr
+  "<img src=\"figure<1>.jpg\" alt=\"Figure #1\"/>")
+(test* "case '(attr-list attrs)'" '(("src" . "figure<1>.jpg") ("alt" . "Figure #1")) (attr-list tag-with-attr))
+

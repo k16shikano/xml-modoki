@@ -16,6 +16,9 @@ xml-modoki.scm
    (for-each-xmlregion <string> <tag> <procedure> &optional <ignore-tags>)
       applys <procedure> for each contents in <string> enclosed with <tag>.
 
+   (attr-list <tag>)
+      finds out strings which look like xml attributes from <tag>. 
+
  You can check xml-modoki-test.scm for more examples.
 
  It seeks a xml-like coutnet using a recursive descent parsing, and my implementation 
