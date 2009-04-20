@@ -10,6 +10,7 @@
   )
 (select-module xml-modoki)
 
+;; String -> Char -> String
 (define (string+char str . char)
   (string-append str (apply string char)))
 (define (read-chars n)
@@ -26,6 +27,8 @@
 	   (string+char tag c))
 	  ((char=? #\! c)
 	   (in-special (read-char) (string+char tag c)))
+	  ((char=? #\< (peek-char))
+	   (string+char tag c))
 	  (else
 	   (in-tag (read-char) (string+char tag c)))))
   (define (in-special c str) ; comment or cdata
@@ -143,7 +146,8 @@
 
 (define (xmltag? e)
   (and (> (string-length e) 1)
-       (char=? #\< (string-ref e 0))))
+       (char=? #\< (string-ref e 0))
+       (char=? #\> (string-ref (string-reverse e) 0))))
 
 (define (start-xmltag? e)
   (and (xmltag? e) (not end-xmltag?)))
@@ -154,11 +158,18 @@
 
 ;; string -> string
 (define (tag->name e)
-  (let ((str (string-drop e 1)))
-    (let ((i (string-index str #\ )))
-      (if i
-          (string-take str i)
-          (string-trim-right str #\>)))))
+  (define (sp&rest str)
+    (let ((str (string->list str)))
+      (values
+       (take-while char-whitespace? str)
+       (drop-while char-whitespace? str))))
+  (receive (spaces rest)
+      (sp&rest (string-drop e 1))
+    (list->string 
+     (let ((i (list-index (pa$ char=? #\ ) rest)))
+       (if i
+	   (take rest i)
+	   (drop-right rest 1))))))
 
 ;; string -> symbol
 (define (tag->symbol e)

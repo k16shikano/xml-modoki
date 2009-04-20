@@ -10,6 +10,8 @@
   "<body><p>ho<b>ge</p><a>fu<p></a>ga<b>hoge</b>fug<b>a</b></body>")
 (define ireko-long
   "<body><b>hoge</b>fuga<p>ho<b>ge</p><a>fu</b></a>ga<b>hoge</b>fug<b>a<b></b>bu-</b></body>")
+(define unclosed
+  "<body><code>if 0 < p < 2; then\n  bu-\n else if p > 5; then\n bo-\n fi</code></body>")
 
 ;; Because there's a <b> inside the first <p> element, xml-maximal-region gets the whole string.
 (define (get-b-from-ireko)
@@ -43,3 +45,11 @@
        "<body>-----------fuga<p>ho<b>ge</p><a>fu</b></a>ga-----------fug------------------</body>" 
 ;      "<body><b>hoge</b>fuga<p>ho<b>ge</p><a>fu</b></a>ga<b>hoge</b>fug<b>a<b></b>bu-</b></body>"
        (for-each-xmlregion ireko-long 'b show-with-hyphen '(p)))
+
+;; You can get a element including some open '<' characters.
+(define (get-code-from-unclosed)
+  (values-ref
+   (with-input-from-string unclosed
+     (lambda ()
+       (xml-maximal-region 'code))) 1))
+(test* "case '(get-code-from-unclosed)'" "<code>if 0 < p < 2; then\n  bu-\n else if p > 5; then\n bo-\n fi</code>" (get-code-from-unclosed))
