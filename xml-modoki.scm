@@ -211,6 +211,6 @@
            (xml-maximal-region tag (ig-elems))
          (string-append before (proc region)
                         (if (string-null? after) after
-                            (for-each-xmlregion after tag proc)))))))
+                            (for-each-xmlregion after tag proc (ig-elems))))))))
 
 (provide "xml-modoki")

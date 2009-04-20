@@ -40,5 +40,6 @@
 (define (show-with-hyphen str)
   (make-string (string-length str) #\-))
 (test* "case '(for-each-xmlregion ireko-long 'b show-with-hyphen '(p a))'" 
-       "<body>-----------fuga<p>ho------------------</a>ga-----------fug------------------</body>" 
-       (for-each-xmlregion ireko-long 'b show-with-hyphen '(p a)))
+       "<body>-----------fuga<p>ho<b>ge</p><a>fu</b></a>ga-----------fug------------------</body>" 
+;      "<body><b>hoge</b>fuga<p>ho<b>ge</p><a>fu</b></a>ga<b>hoge</b>fug<b>a<b></b>bu-</b></body>"
+       (for-each-xmlregion ireko-long 'b show-with-hyphen '(p)))
