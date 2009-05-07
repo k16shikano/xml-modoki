@@ -1,6 +1,6 @@
 (use gauche.test)
 
-(add-load-path "/home/kshikano/gauche/lib/text/xml-modoki/")
+(add-load-path ".")
 (use xml-modoki)
 
 ;; test data
