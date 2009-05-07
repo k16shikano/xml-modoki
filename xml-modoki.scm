@@ -27,7 +27,9 @@
 	  ((char=? #\> c)
 	   (string+char tag c))
 	  ((char=? #\! c)
-	   (in-special (read-char) (string+char tag c)))
+	   (if (string=? "<" tag) 
+	       (in-special (read-char) (string+char tag c))
+	       (in-tag (read-char) (string+char tag c))))
 	  ((char=? #\< (peek-char))
 	   (string+char tag c))
 	  (else
@@ -74,7 +76,8 @@
 		    (let ((nnc (read-char)))
 		      (if (char=? #\> nnc)
 			  (string+char str c nc nnc)  ; end of cdata
-			  (error "illegal cdata" str))))
+			  (in-cdata (read-char) (string+char str c nc)))))
+;			  (error "illegal cdata" str))))
 		   (else
 		    (in-cdata (read-char) (string+char str c nc))))))
 	  (else
@@ -136,7 +139,10 @@
 			  (lambda ()
 			    (out-region (read-xml) "" (string-append before ig-before ig-elem))))))))
 	  ((start-tag? e)
-	   (in-region (read-xml) e 0 before))
+	   (cond ((empty-xmltag? e)
+		  (values before e (rest-xml)))
+		 (else
+		  (in-region (read-xml) e 0 before))))
 	  (else
 	   (out-region (read-xml) body (string-append before e)))))
   (out-region (read-xml) "" ""))
@@ -151,26 +157,36 @@
        (char=? #\> (string-ref (string-reverse e) 0))))
 
 (define (start-xmltag? e)
-  (and (xmltag? e) (not end-xmltag?)))
+  (and (xmltag? e) (not (end-xmltag? e))))
 
 (define (end-xmltag? e)
   (and (xmltag? e)
-       (char=? #\/ (tag->name e))))
+       (char=? #\/ (string-ref (tag->name e) 0))))
+
+(define (empty-xmltag? e)
+  (and (xmltag? e)
+       (char=? #\/ (string-ref (string-reverse e) 1))))
 
 ;; string -> string
 (define (tag->name e)
+  ;; string -> list & list
   (define (sp&rest str)
     (let ((str (string->list str)))
       (values
        (take-while char-whitespace? str)
        (drop-while char-whitespace? str))))
+  (define drop-tailodd
+    (compose 
+     reverse
+     (pa$ drop-while (cut char-set-contains? #[\s/>] <>))
+     reverse))
   (receive (spaces rest)
       (sp&rest (string-drop e 1))
     (list->string 
      (let ((i (list-index (pa$ char=? #\ ) rest)))
        (if i
 	   (take rest i)
-	   (drop-right rest 1))))))
+	   (drop-tailodd rest))))))
 
 ;; string -> symbol
 (define (tag->symbol e)
@@ -207,11 +223,11 @@
 	       #t)
 	      (else
 	       #f)))))
-  (unless (start-xmltag? e)
-          '()
-          (let ((ls (cdr (string-split (string-drop-until-right #[>?/\spaces] e) 
-				       splitter?))))
-            (map split-by-equal ls))))
+  (if (start-xmltag? e)
+      (let ((ls (cdr (string-split (string-drop-until-right #[>?/\spaces] e) 
+				   splitter?))))
+	(map split-by-equal ls))
+      '()))
 
 (define (split-by proc ls)
   (let ((n (list-index splitter? ls)))

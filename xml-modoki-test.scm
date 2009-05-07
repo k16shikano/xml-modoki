@@ -1,6 +1,6 @@
 (use gauche.test)
 
-(add-load-path ".")
+(add-load-path "/home/kshikano/gauche/lib/text/xml-modoki/")
 (use xml-modoki)
 
 ;; test data
@@ -54,6 +54,23 @@
        (xml-maximal-region 'code))) 1))
 (test* "case '(get-code-from-unclosed)'" "<code>if 0 < p < 2; then\n  bu-\n else if p > 5; then\n bo-\n fi</code>" (get-code-from-unclosed))
 
+;; empty-element tags
+
+;; test data
+(define empty-elem
+  "<body><p>ho<b/>ge</p><a>fu</a>ga<b>ho<code/>ge</b>fug<b>a</b></body>")
+
+(define (get-empty-elem)
+  (values-ref
+   (with-input-from-string empty-elem
+     (lambda ()
+       (xml-maximal-region 'code))) 1))
+
+(test* "case '(get-empty-elem)'" "<code/>" (get-empty-elem))
+(test* "case '(for-each-xmlregion empty-elem 'code show-with-hyphen)'" 
+       "<body><p>ho<b/>ge</p><a>fu</a>ga<b>ho-------ge</b>fug<b>a</b></body>" 
+;      "<body><p>ho<b/>ge</p><a>fu</a>ga<b>ho<code/>ge</b>fug<b>a</b></body>"
+       (for-each-xmlregion empty-elem 'code show-with-hyphen))
 
 ;; Some utilities
 
