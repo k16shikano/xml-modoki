@@ -114,10 +114,7 @@
 	 (not (null? ignorelist))
          (member (tag->name e) (map x->string (car ignorelist)))))
   (define (rest-xml)
-    (let R ((next (read-xml)))
-      (if (string-null? next)
-	  ""
-	  (string-append next (R (read-xml))))))
+    (get-remaining-input-string (current-input-port)))
   (define (in-region e body c before)
     (cond ((string-null? e)
 	   (values before body (rest-xml))) ;; in case short-ended tag.
@@ -195,7 +192,8 @@
 
 (define (with-rewind-input-string readstr thunk)
   (if (eq? 'string (port-type (current-input-port)))
-      (with-input-from-string (string-append readstr (port->string (current-input-port)))
+      (with-input-from-string
+          (string-append readstr (get-remaining-input-string (current-input-port)))
 	thunk)
       (error "Input port is not string -- WITH-REWIND-INPUT-STRING")))
 
