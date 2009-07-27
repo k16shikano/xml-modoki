@@ -3,6 +3,7 @@
 
 (define-module xml-modoki
   (use srfi-13)
+  (use text.tree)
   (export read-xml
 	  xml-maximal-region
 	  for-each-xmlregion
@@ -21,80 +22,80 @@
 (define (read-xml)
   (define (in-tag c tag)
     (cond ((eof-object? c)
-	      (error "EOF while tag" tag))
-	    ((char=? #\\ c)
-	        (in-escaped (read-char) (cons c tag)))
-	      ((char=? #\> c)
-	          (cons c tag))
-	        ((char=? #\! c)
-		    (if (equal? '(#\<) tag) 
-			       (in-special (read-char) (cons c tag))
-			              (in-tag (read-char) (cons c tag))))
-		  ((char=? #\< (peek-char))
-		      (cons c tag))
-		    (else
-		        (in-tag (read-char) (cons c tag)))))
+	   (error "EOF while tag" tag))
+	  ((char=? #\\ c)
+	   (in-escaped (read-char) (cons c tag)))
+	  ((char=? #\> c)
+	   (cons c tag))
+	  ((char=? #\! c)
+	   (if (equal? '(#\<) tag) 
+	       (in-special (read-char) (cons c tag))
+	       (in-tag (read-char) (cons c tag))))
+	  ((char=? #\< (peek-char))
+	   (cons c tag))
+	  (else
+	   (in-tag (read-char) (cons c tag)))))
   (define (in-special c str) ; comment or cdata
     (cond ((eof-object? c)
-	      (error "EOF while xml-comment or cdata" str))
-	    ((char=? #\- c)
-	        (let ((nc (read-char)))
-		       (cond ((char=? #\- nc)
-			          (in-comment (read-char) `(,nc ,c ,@str)))
-			        (else
-				     (error "illegal comment" str)))))
-	      ((char=? #\[ c)
-	          (let ((get-cdata (read-chars 6))
+	   (error "EOF while xml-comment or cdata" str))
+	  ((char=? #\- c)
+	   (let ((nc (read-char)))
+	     (cond ((char=? #\- nc)
+		    (in-comment (read-char) `(,nc ,c ,@str)))
+		   (else
+		    (error "illegal comment" str)))))
+	  ((char=? #\[ c)
+	   (let ((get-cdata (read-chars 6))
                  (lit-cdata '(#\C #\D #\A #\T #\A #\[)))
-		         (cond ((equal? lit-cdata get-cdata)
-				    (in-cdata (read-char) (append (reverse lit-cdata) (cons c str))))
-			          (else
-				       (error "illegal cdata" str)))))
+	     (cond ((equal? lit-cdata get-cdata)
+		    (in-cdata (read-char) (append (reverse lit-cdata) (cons c str))))
+		   (else
+		    (error "illegal cdata" str)))))
           ((char=? #\D c)
            (in-tag (read-char) (cons c str)))
-	    (else
-	        (error "unknown xml special" (cons c str)))))
+	  (else
+	   (error "unknown xml special" (cons c str)))))
   (define (in-comment c str)
     (cond ((eof-object? c)
-	      (error "EOF while xml-comment" str))
-	    ((char=? #\- c)
-	        (let ((nc (read-char)))
-		       (cond ((char=? #\- nc)
-			          (let ((nnc (read-char)))
-				          (if (char=? #\> nnc)
-					        `(,nnc ,nc ,c ,@str)  ; end of xml-comment
-						  (error "illegal comment" str)))) 
-			        (else
-				     (in-comment (read-char) `(,nc ,c ,@str))))))
-	      (else
-	          (in-comment (read-char) (cons c str)))))
+	   (error "EOF while xml-comment" str))
+	  ((char=? #\- c)
+	   (let ((nc (read-char)))
+	     (cond ((char=? #\- nc)
+		    (let ((nnc (read-char)))
+		      (if (char=? #\> nnc)
+			  `(,nnc ,nc ,c ,@str)  ; end of xml-comment
+			  (error "illegal comment" str)))) 
+		   (else
+		    (in-comment (read-char) `(,nc ,c ,@str))))))
+	  (else
+	   (in-comment (read-char) (cons c str)))))
   (define (in-cdata c str)
     (cond ((eof-object? c)
-	      (error "EOF while cdata"))
-	    ((char=? #\] c)
-	        (let ((nc (read-char)))
-		       (cond ((char=? #\] nc)
-			          (let ((nnc (read-char)))
-				          (if (char=? #\> nnc)
-					        `(,nnc ,nc ,c ,@str)  ; end of cdata
-						  (in-cdata (read-char) `(,nc ,c ,@str)))))
-			        (else
-				     (in-cdata (read-char) `(,nc ,c ,@str))))))
-	      (else
-	          (in-cdata (read-char) (cons c str)))))
+	   (error "EOF while cdata"))
+	  ((char=? #\] c)
+	   (let ((nc (read-char)))
+	     (cond ((char=? #\] nc)
+		    (let ((nnc (read-char)))
+		      (if (char=? #\> nnc)
+			  `(,nnc ,nc ,c ,@str)  ; end of cdata
+			  (in-cdata (read-char) `(,nc ,c ,@str)))))
+		   (else
+		    (in-cdata (read-char) `(,nc ,c ,@str))))))
+	  (else
+	   (in-cdata (read-char) (cons c str)))))
   (define (in-escaped c tag)
     (in-tag (read-char) (cons c tag)))
   (define (in-body c body)
     (cond ((eof-object? c)
-	      body)
-	    ((eof-object? (peek-char))
-	        (cons c body))
-	      ((char=? #\< c)
-	          (in-tag (read-char) '(#\<)))
-	        ((char=? #\< (peek-char))
-		    (cons c body))
-		  (else
-		      (in-body (read-char) (cons c body)))))
+	   body)
+	  ((eof-object? (peek-char))
+	   (cons c body))
+	  ((char=? #\< c)
+	   (in-tag (read-char) '(#\<)))
+	  ((char=? #\< (peek-char))
+	   (cons c body))
+	  (else
+	   (in-body (read-char) (cons c body)))))
   (list->string (reverse (in-body (read-char) '()))))
 
 ;; xml-maximal-region seeks a content enclosed with the specifyed tag.
