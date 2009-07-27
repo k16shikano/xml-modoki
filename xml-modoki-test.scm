@@ -2,6 +2,7 @@
 
 (add-load-path ".")
 (use xml-modoki)
+(test-start "xml-modoki")
 
 ;; test data
 (define ireko
@@ -79,3 +80,4 @@
   "<img src=\"figure<1>.jpg\" alt=\"Figure #1\"/>")
 (test* "case '(attr-list attrs)'" '(("src" . "figure<1>.jpg") ("alt" . "Figure #1")) (attr-list tag-with-attr))
 
+(test-end)
